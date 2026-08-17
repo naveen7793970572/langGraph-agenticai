@@ -184,17 +184,21 @@ print("Interactive pipeline compiled and ready for live execution.")
 # 6. EXECUTION LOOP
 # ==========================================
 app = FastAPI()
-class TaskRequest(BaseModel):
-    task: str
-    manager_command: str = "store"
 
-@app.post("/execute-task")
-def execute_task(req: TaskRequest):
+
+@app.get("/execute-task")
+def execute_task(task: str, manager_command: str = "store"):
+    # The variables are now pulled directly from the URL
     initial_state = {
-        "messages": [HumanMessage(content=req.task)],
-        "manager_command": req.manager_command
+        "messages": [HumanMessage(content=task)],
+        "manager_command": manager_command
     }
     return rt_app.invoke(initial_state, config={"recursion_limit": 50})
+
+# Add a root endpoint so the base URL doesn't show "Not Found"
+@app.get("/")
+def read_root():
+    return {"message": "API active. To use it, go to /execute-task?task=YOUR_PROMPT_HERE"}
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
